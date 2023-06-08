@@ -145,6 +145,22 @@ ARGS is a space-delimited string of CLI flags passed to
           (flutter-mode)))
       ,@body)))
 
+(defmacro flutter--with-attach-proc (args &rest body)
+  "Execute BODY while ensuring an inferior `flutter` add-to-app process is running.
+
+ARGS is a space-delimited string of CLI flags passed to
+`flutter`, and can be nil."
+  `(flutter--from-project-root
+    (let* ((buffer (flutter--get-buffer-create flutter-buffer-name))
+           (alive (flutter--running-p))
+           (arglist (if ,args (split-string ,args))))
+      (unless alive
+        (apply #'make-comint-in-buffer "Flutter" buffer (flutter-build-command) nil "attach" arglist))
+      (with-current-buffer buffer
+        (unless (derived-mode-p 'flutter-mode)
+          (flutter-mode)))
+      ,@body)))
+
 (defun flutter--get-buffer-create (buffer-or-name)
   "Same as `get-buffer-create' but ensures BUFFER-OR-NAME has our CWD.
 
@@ -280,6 +296,31 @@ args."
   (flutter--with-run-proc
    args
    (pop-to-buffer-same-window buffer)))
+
+;;;###autoload
+(defun flutter-attach (&optional args)
+  "Execute `flutter run` inside Emacs.
+
+ARGS is a space-delimited string of CLI flags passed to
+`flutter`, and can be nil.  Call with a prefix to be prompted for
+args."
+  (interactive
+   (list (when current-prefix-arg
+           (read-string "Args: "))))
+  (flutter--with-attach-proc
+   args
+   (pop-to-buffer-same-window buffer)))
+
+;;;###autoload
+(defun flutter-run-or-attach ()
+  (interactive)
+  (if (flutter--running-p)
+      (message "Flutter process is already running.")
+    (progn
+      (let ((mode (completing-read "Mode: " '("attach" "run") nil t)))
+        (if (and (string-equal mode "attach"))
+            (call-interactively #'flutter-attach)
+          (call-interactively #'flutter-run))))))
 
 ;;;###autoload
 (defun flutter-run-or-hot-reload ()
