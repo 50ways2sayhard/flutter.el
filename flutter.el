@@ -32,10 +32,21 @@
 (require 'flutter-project)
 (require 'flutter-l10n)
 
+(defgroup flutter nil
+  "Customize group for flutter.el"
+  :prefix "flutter-"
+  :group 'flutter)
+
 (defconst flutter-buffer-name "*Flutter*")
 
 (defvar flutter-sdk-path nil
   "Path to Flutter SDK.")
+
+(defcustom flutter-use-fvm nil
+  "Whether to use fvm proxied flutter command.
+Will not take effect if `flutter-sdk-path' is not-nil."
+  :type 'boolean
+  :group 'flutter)
 
 
 ;;; Key bindings
@@ -212,9 +223,18 @@ The title will be in match 2.")
 
 (defun flutter-build-command ()
   "Build flutter command to execute."
-  (let ((bin (when flutter-sdk-path
-               (concat (file-name-as-directory flutter-sdk-path) "bin/"))))
-    (concat (or bin "") "flutter")))
+  (concat (flutter--build-sdk-path) "flutter"))
+
+(defun flutter--build-sdk-path ()
+  "Return the flutter excutable path.
+If `flutter-sdk-path' is set, concatenates this file path with bin/.
+If `flutter-use-fvm' is set and a '.fvm' folder exists in project root,
+concatenates  root directory with .fvm/flutter_sdk/bin/."
+  (let ((root (flutter-project-get-root)))
+    (cond
+     (flutter-sdk-path (concat (file-name-as-directory flutter-sdk-path) "bin/"))
+     ((and flutter-use-fvm (file-exists-p (concat root ".fvm"))) (concat (flutter-project-get-root) ".fvm/flutter_sdk/bin/"))
+     (t ""))))
 
 (defun flutter-build-test-command ()
   "Build test command appropriate for the current buffer."

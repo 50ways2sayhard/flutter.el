@@ -69,6 +69,8 @@ M-x package-install flutter
 Set `flutter-sdk-path` to the location of your Flutter SDK. This isn't even
 necessary if the `flutter` binary is on your `PATH`.
 
+Set `flutter-use-fvm` to not-nil if you manage your flutter environment through `fvm`.
+
 The localization tools will read your `/l10n.yaml` file by default, but
 alternatively you can set the following variables:
 
