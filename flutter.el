@@ -48,6 +48,11 @@ Will not take effect if `flutter-sdk-path' is not-nil."
   :type 'boolean
   :group 'flutter)
 
+(defcustom flutter-pub-hosted-url "https://pub.dev"
+  "Pub mirror server url."
+  :group 'flutter
+  :type 'string)
+
 
 ;;; Key bindings
 
@@ -329,6 +334,24 @@ args."
   (if (flutter--running-p)
       (flutter-hot-reload)
     (flutter-run)))
+
+;;;###autoload
+(defun flutter-pub-get ()
+  "Run flutter pub get within flutter project root."
+  (interactive)
+  (flutter--from-project-root
+   (let* ((temp (mapcar 'concat process-environment))
+          (process-environment (setenv-internal temp "PUB_HOSTED_URL" flutter-pub-hosted-url t)))
+    (make-process :name "flutter-pub-get"
+                  :buffer "*Flutter Pub Get*"
+                  :command (list (flutter-build-command) "pub" "get")
+                  :coding 'utf-8
+                  :noquery t
+                  :sentinel (lambda (_ event)
+                              (message "[Flutter] run pub get: %s" event)
+                              (when (string-prefix-p "finished" event)
+                                (kill-buffer "*Flutter Pub Get*"))))
+    (display-buffer "*Flutter Pub Get*"))))
 
 ;;;###autoload
 (defun flutter-test-all ()
