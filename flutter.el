@@ -121,6 +121,10 @@ the `flutter` process."
 (defun flutter-hot-reload ()
   "Dummy to suppress compiler warning.")
 
+(defun flutter-hot-restart ()
+  "Dummy to suppress compiler warning.")
+
+
 (flutter-register-keys flutter-interactive-keys-alist)
 
 
@@ -333,7 +337,15 @@ args."
   (interactive)
   (if (flutter--running-p)
       (flutter-hot-reload)
-    (flutter-run)))
+    (flutter-run-or-attach)))
+
+;;;###autoload
+(defun flutter-run-or-hot-restart ()
+  "Start a Flutter process or hot-restart  if already running."
+  (interactive)
+  (if (flutter--running-p)
+      (flutter-hot-restart)
+    (flutter-run-or-attach)))
 
 ;;;###autoload
 (defun flutter-pub-get ()
