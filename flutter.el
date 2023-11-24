@@ -192,10 +192,13 @@ If the existing buffer's CWD doesn't match, kill it and recreate it."
 
 (defun flutter--send-command (command)
   "Send COMMAND to a running Flutter process."
-  (flutter--with-run-proc
-   nil
-   (let ((proc (get-buffer-process flutter-buffer-name)))
-     (comint-send-string proc command))))
+  (if (flutter--running-p)
+      (let ((proc (get-buffer-process flutter-buffer-name)))
+        (comint-send-string proc command))
+    (flutter--with-run-proc
+     nil
+     (let ((proc (get-buffer-process flutter-buffer-name)))
+       (comint-send-string proc command)))))
 
 (defun flutter--test (&rest args)
   "Execute `flutter test` inside Emacs.
@@ -345,8 +348,7 @@ args."
                 (choice (completing-read "Device: " collection)))
            (cdr (assoc choice collection)))))
 
-  (flutter-attach (format "-d %s %s" device-id (or args )))
-  )
+  (flutter-attach (format "-d %s %s" device-id (or args ))))
 
 ;;;###autoload
 (defun flutter-run-or-attach ()
