@@ -339,6 +339,16 @@ args."
    (pop-to-buffer-same-window buffer)))
 
 ;;;###autoload
+(defun flutter-attach-device (device-id &optional args)
+  (interactive
+   (list (let* ((collection (flutter--devices))
+                (choice (completing-read "Device: " collection)))
+           (cdr (assoc choice collection)))))
+
+  (flutter-attach (format "-d %s %s" device-id (or args )))
+  )
+
+;;;###autoload
 (defun flutter-run-or-attach ()
   (interactive)
   (if (flutter--running-p)
@@ -372,16 +382,16 @@ args."
   (flutter--from-project-root
    (let* ((temp (mapcar 'concat process-environment))
           (process-environment (setenv-internal temp "PUB_HOSTED_URL" flutter-pub-hosted-url t)))
-    (make-process :name "flutter-pub-get"
-                  :buffer "*Flutter Pub Get*"
-                  :command (list (flutter-build-command) "pub" "get")
-                  :coding 'utf-8
-                  :noquery t
-                  :sentinel (lambda (_ event)
-                              (message "[Flutter] run pub get: %s" event)
-                              (when (string-prefix-p "finished" event)
-                                (kill-buffer "*Flutter Pub Get*"))))
-    (display-buffer "*Flutter Pub Get*"))))
+     (make-process :name "flutter-pub-get"
+                   :buffer "*Flutter Pub Get*"
+                   :command (list (flutter-build-command) "pub" "get")
+                   :coding 'utf-8
+                   :noquery t
+                   :sentinel (lambda (_ event)
+                               (message "[Flutter] run pub get: %s" event)
+                               (when (string-prefix-p "finished" event)
+                                 (kill-buffer "*Flutter Pub Get*"))))
+     (display-buffer "*Flutter Pub Get*"))))
 
 ;;;###autoload
 (defun flutter-test-all ()
