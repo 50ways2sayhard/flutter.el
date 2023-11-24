@@ -7,12 +7,14 @@ run_emacs = $(emacs) -Q --batch -L . -L $(elpa_dir) -l package \
 	--eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
 	--eval '(package-initialize)'
 
-dependencies := flycheck dash
-test_versions := 25 26 27 28
+dependencies := flycheck
+dev_dependencies := package-lint
+all_deps := $(dependencies) $(dev_dependencies)
+test_versions := 25 26 27 28 29
 
 .PHONY: test
 test: ## Compile and run unit tests
-test: test-compile
+test: lint test-compile
 
 define test_one
   .PHONY: test-$(1)
@@ -29,17 +31,23 @@ test-matrix: $(addprefix test-,$(test_versions))
 $(elpa_dir):
 	$(run_emacs) \
 		--eval '(make-directory "$(@)")' \
-		--eval "(let ((to-install (seq-filter (lambda (e) (not (require e nil t))) '($(dependencies))))) \
+		--eval "(let ((to-install (seq-filter (lambda (e) (not (require e nil t))) '($(all_deps))))) \
 			(when to-install (package-refresh-contents) (mapc #'package-install to-install)))"
 
 .PHONY: deps
 deps: $(elpa_dir)
 
+.PHONY: lint
+lint: ## Check for issues
+lint: | $(elpa_dir)
+	$(run_emacs) \
+		-f package-lint-batch-and-exit *.el
+
 .PHONY: test-compile
 test-compile: | $(elpa_dir)
 	$(run_emacs) \
 		--eval '(setq byte-compile-error-on-warn t)' \
-		 -f batch-byte-compile *.el
+		-f batch-byte-compile *.el
 
 .PHONY: prettify
 prettify: ## Auto-format code
@@ -77,7 +85,7 @@ clean: ## Clean files
 .PHONY: clobber
 clobber: ## Remove all generated files
 clobber: clean
-	rm -rf $(elpa_dir)
+	rm -rf $(elpa_dir)*
 
 # Hooks
 
